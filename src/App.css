@@ -26,3 +26,16 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+.react-codemirror2{
+  height: 100%;
+  min-height: 500px;
+}
+
+.CodeMirror{
+  height: 100% !important;
+}
+
+.CodeMirror-scroll{
+  min-height: 50%;
+}

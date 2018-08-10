@@ -4,12 +4,20 @@ import './firebaseConfig';
 import firebase from 'firebase/app';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import TimeAgo from 'javascript-time-ago'
- 
+import {UnControlled as CodeMirror} from 'react-codemirror2'
+
+
 // Load locale-specific relative date/time formatting rules.
 import en from 'javascript-time-ago/locale/en'
 // Add locale-specific relative date/time formatting rules.
 TimeAgo.locale(en)
  
+require('codemirror/lib/codemirror.css');
+require('codemirror/theme/material.css');
+require('codemirror/theme/neat.css');
+require('codemirror/theme/idea.css');
+require('codemirror/theme/mdn-like.css');
+require('codemirror/mode/javascript/javascript')
 // Create relative date/time formatter.
 const timeAgo = new TimeAgo('en-US')
 
@@ -60,6 +68,7 @@ class Panel extends Component{
   }
 }
 
+
 class HistoryPanel extends Component{
   constructor(props){
     super(props);
@@ -72,7 +81,7 @@ class HistoryPanel extends Component{
         className = "list-group-item list-group-item-action active"
       }
       return (
-        <button 
+        <button key={x}
           onClick={() => this.props.setID(x)}
           className={className}>
           {x}
@@ -81,7 +90,7 @@ class HistoryPanel extends Component{
     });
     return (
       <div className='historyPanel'>
-        <div className="list-group">
+        <div className="list-group text-center">
           {listItems}
         </div>
       </div>
@@ -90,27 +99,61 @@ class HistoryPanel extends Component{
 
 }
 
+
+
 class Editor extends Component{
   constructor(props){
     super(props);
   }
 
+  refCodeMirrorCallback = (ref) => {
+    var cm = ref.getCodeMirror();
+    var width = 20, height = 30;
+    cm.setSize(width, height);
+  }
+
   render(){
     var canEdit = (this.props.stage != 'loading');
+
+    var lineCount = 0;
+    var lineNumbers = this.props.text.split('\n').map((line) => {
+      lineCount++;
+      return (
+        <div className="list-group-item p-0"> 
+          {lineCount} 
+        </div>
+      );
+    });
+    var text = this.props.text;
+
     return (
       <div className="editor">
-        <textarea
-          className="form-control"
-          rows={20}
-          readOnly={!canEdit} 
-          value={this.props.text} 
-          onChange={this.props.handleEdit}>
-        </textarea>
+        <div className="row">
+          <div className="col-0">
+            <div className="list-group">
+            </div>
+          </div>
+          <div className="col-12 border p-0">
+            <CodeMirror
+              value={this.props.text}
+              options={{
+                mode: 'javascript',
+                theme: 'neat',
+                lineNumbers: true
+              }}
+              onChange={(editor, data, value) => {
+                  this.props.handleEdit(value);
+              }}
+            / >
+              
+          </div>
+        </div>
       </div>
     );
   }
 
 }
+
 
 class App extends Component {
   constructor(props){
@@ -125,7 +168,6 @@ class App extends Component {
   }
 
   
-
   
 
   updateFromID = async () => {
@@ -160,6 +202,7 @@ class App extends Component {
 
   handleSave = async () => {
     this.setState({stage: "loading"});
+    this.setState({history: []});
     var id = null;
     var pid = this.state.id;
     db.ref('counter').transaction((val) => {
@@ -191,9 +234,9 @@ class App extends Component {
 
   
 
-  handleEdit = (event) => {
+  handleEdit = (data) => {
     this.setState({
-      text: event.target.value, 
+      text: data, 
       changed: true
     });
   }
@@ -222,6 +265,7 @@ class App extends Component {
           </div>
           <div className="col-2">
             <HistoryPanel
+              stage={this.state.stage}
               history={this.state.history}
               id={this.state.id}
               setID={this.setID}/>
